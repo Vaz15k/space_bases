@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="e                    </div>
+
+                    <div class="form-group">
+                        <label for="moduleType">Module Type</label>
+                        <select id="moduleType">
+                            <option value="cylinder">Cylinder</option>
+                            <option value="dome">Dome</option>
+                            <option value="box">Box</option>
+                            <option value="sphere">Sphere</option>
+                            <option value="capsule">Capsule</option>
+                            <option value="torus">Torus</option>
+                            <option value="octahedron">Octahedron</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group"> <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Base</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>Space Base</h1>
+        </header>
+
+        <div class="main-content">
+            <aside class="sidebar left-sidebar">
+                <div class="panel">
+                    <h2>➕ Add Module</h2>
+                    
+                    <div class="form-group">
+                        <label for="moduleName">Module Name</label>
+                        <input type="text" id="moduleName" placeholder="Ex: Habitat 1" value="Habitat 1">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="moduleType">Tipo de Módulo</label>
+                        <select id="moduleType">
+                            <option value="cylinder">🏛️ Cilindro</option>
+                            <option value="dome">🔭 Domo</option>
+                            <option value="box">📦 Cubo</option>
+                            <option value="sphere">⚪ Esfera</option>
+                            <option value="capsule">� Cápsula</option>
+                            <option value="torus">🍩 Toroide</option>
+                            <option value="octahedron">💎 Octaedro</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="moduleColor">Module Color</label>
+                        <input type="color" id="moduleColor" value="#FFFFFF">
+                    </div>
+
+                    <button id="addModuleBtn" class="btn btn-primary">
+                        Add to Base
+                    </button>
+
+                    <div class="divider"></div>
+
+                    <div class="control-hints">
+                        <h3>Controls</h3>
+                        <div class="hint-item">
+                            <kbd>Click</kbd>
+                            <span>Select module</span>
+                        </div>
+                        <div class="hint-item">
+                            <kbd>T</kbd>
+                            <span>Move</span>
+                        </div>
+                        <div class="hint-item">
+                            <kbd>R</kbd>
+                            <span>Rotate</span>
+                        </div>
+                        <div class="hint-item">
+                            <kbd>S</kbd>
+                            <span>Scale</span>
+                        </div>
+                        <div class="hint-item">
+                            <kbd>ESC</kbd>
+                            <span>Deselect</span>
+                        </div>
+                        <div class="hint-item">
+                            <kbd>Del</kbd>
+                            <span>Delete</span>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <main class="viewer-container">
+                <div id="canvas-container">
+                </div>
+                
+                <div class="viewer-controls">
+                    <button id="resetCameraBtn" class="btn btn-secondary">
+                        Reset Camera
+                    </button>
+                </div>
+
+                <div class="stats-panel">
+                    <div class="stat-item">
+                        <span class="stat-label">Modules:</span>
+                        <span id="moduleCount" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Total Area:</span>
+                        <span id="totalArea" class="stat-value">0 m²</span>
+                    </div>
+                </div>
+            </main>
+
+            <aside class="sidebar right-sidebar">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2>Base Modules</h2>
+                        <button id="clearAllBtn" class="btn btn-danger btn-sm" title="Clear all base">
+                            Clear All
+                        </button>
+                    </div>
+                    
+                    <div id="modulesList" class="modules-list">
+                        <p class="empty-state">No modules added yet. Start by creating your first module!</p>
+                    </div>
+                </div>
+            </aside>
+        </div>
+
+        <div id="editModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Edit Module</h2>
+                    <button class="close-btn" onclick="closeEditModal()">&times;</button>
+                </div>
+                
+                <div class="modal-body">
+                    <div class="tabs">
+                        <button class="tab-btn active" data-tab="properties">Properties</button>
+                        <button class="tab-btn" data-tab="dimensions">Dimensions</button>
+                        <button class="tab-btn" data-tab="position">Position</button>
+                        <button class="tab-btn" data-tab="rotation">Rotation</button>
+                    </div>
+
+                    <div class="tab-content active" data-tab="properties">
+                        <div class="form-group">
+                            <label for="editName">Module Name</label>
+                            <input type="text" id="editName" placeholder="Module name">
+                        </div>
+                        <div class="form-group">
+                            <label for="editColor">Color</label>
+                            <input type="color" id="editColor">
+                        </div>
+                    </div>
+
+                    <div class="tab-content" data-tab="dimensions">
+                        <div id="dimensionControls">
+                        </div>
+                    </div>
+
+                    <div class="tab-content" data-tab="position">
+                        <div class="position-control">
+                            <label>Position X (Horizontal)</label>
+                            <div class="slider-container">
+                                <button class="slider-btn" onclick="adjustPosition('x', -5)">◄◄</button>
+                                <button class="slider-btn" onclick="adjustPosition('x', -1)">◄</button>
+                                <input type="range" id="editPosX" min="-50" max="50" step="0.5" value="0">
+                                <button class="slider-btn" onclick="adjustPosition('x', 1)">►</button>
+                                <button class="slider-btn" onclick="adjustPosition('x', 5)">►►</button>
+                                <span id="posXValue" class="value-display">0</span>
+                            </div>
+                        </div>
+
+                        <div class="position-control">
+                            <label>Position Y (Depth)</label>
+                            <div class="slider-container">
+                                <button class="slider-btn" onclick="adjustPosition('y', -5)">◄◄</button>
+                                <button class="slider-btn" onclick="adjustPosition('y', -1)">◄</button>
+                                <input type="range" id="editPosY" min="-50" max="50" step="0.5" value="0">
+                                <button class="slider-btn" onclick="adjustPosition('y', 1)">►</button>
+                                <button class="slider-btn" onclick="adjustPosition('y', 5)">►►</button>
+                                <span id="posYValue" class="value-display">0</span>
+                            </div>
+                        </div>
+
+                        <div class="position-control">
+                            <label>Position Z (Height)</label>
+                            <div class="slider-container">
+                                <button class="slider-btn" onclick="adjustPosition('z', -2)">◄◄</button>
+                                <button class="slider-btn" onclick="adjustPosition('z', -0.5)">◄</button>
+                                <input type="range" id="editPosZ" min="0" max="30" step="0.5" value="4">
+                                <button class="slider-btn" onclick="adjustPosition('z', 0.5)">►</button>
+                                <button class="slider-btn" onclick="adjustPosition('z', 2)">►►</button>
+                                <span id="posZValue" class="value-display">4</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-content" data-tab="rotation">
+                        <div class="position-control">
+                            <label>Rotation X (Pitch)</label>
+                            <div class="slider-container">
+                                <button class="slider-btn" onclick="adjustRotation('x', -45)">◄◄</button>
+                                <button class="slider-btn" onclick="adjustRotation('x', -15)">◄</button>
+                                <input type="range" id="editRotX" min="0" max="360" step="15" value="0">
+                                <button class="slider-btn" onclick="adjustRotation('x', 15)">►</button>
+                                <button class="slider-btn" onclick="adjustRotation('x', 45)">►►</button>
+                                <span id="rotXValue" class="value-display">0°</span>
+                            </div>
+                        </div>
+
+                        <div class="position-control">
+                            <label>Rotation Y (Yaw)</label>
+                            <div class="slider-container">
+                                <button class="slider-btn" onclick="adjustRotation('y', -45)">◄◄</button>
+                                <button class="slider-btn" onclick="adjustRotation('y', -15)">◄</button>
+                                <input type="range" id="editRotY" min="0" max="360" step="15" value="0">
+                                <button class="slider-btn" onclick="adjustRotation('y', 15)">►</button>
+                                <button class="slider-btn" onclick="adjustRotation('y', 45)">►►</button>
+                                <span id="rotYValue" class="value-display">0°</span>
+                            </div>
+                        </div>
+
+                        <div class="position-control">
+                            <label>Rotation Z (Roll)</label>
+                            <div class="slider-container">
+                                <button class="slider-btn" onclick="adjustRotation('z', -45)">◄◄</button>
+                                <button class="slider-btn" onclick="adjustRotation('z', -15)">◄</button>
+                                <input type="range" id="editRotZ" min="0" max="360" step="15" value="0">
+                                <button class="slider-btn" onclick="adjustRotation('z', 15)">►</button>
+                                <button class="slider-btn" onclick="adjustRotation('z', 45)">►►</button>
+                                <span id="rotZValue" class="value-display">0°</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+                    <button class="btn btn-primary" onclick="saveModule()">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="/js/app.js"></script>
+</body>
+</html>
