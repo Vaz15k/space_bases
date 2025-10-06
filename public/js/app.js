@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { TransformControls } from 'three/addons/controls/TransformControls.js';
 
+// ==================== ESTADO GLOBAL ====================
 let scene, camera, renderer, controls, transformControls;
 let modules = [];
 let currentEditingModule = null;
@@ -9,6 +10,7 @@ let selectedMesh = null;
 let raycaster, mouse;
 let isTransforming = false;
 
+// ==================== API HELPERS ====================
 const API_URL = '/api/modules';
 
 async function fetchModules() {
@@ -22,7 +24,7 @@ async function fetchModules() {
             updateStats();
         }
     } catch (error) {
-        console.error('Error fetching modules:', error);
+        console.error('Erro ao buscar módulos:', error);
     }
 }
 
@@ -36,11 +38,11 @@ async function createModule(moduleData) {
         const data = await response.json();
         if (data.success) {
             await fetchModules();
-            showNotification('✅ Module added successfully!', 'success');
+            showNotification('✅ Módulo adicionado com sucesso!', 'success');
         }
     } catch (error) {
-        console.error('Error creating module:', error);
-        showNotification('❌ Error adding module', 'error');
+        console.error('Erro ao criar módulo:', error);
+        showNotification('❌ Erro ao adicionar módulo', 'error');
     }
 }
 
@@ -54,53 +56,56 @@ async function updateModule(id, moduleData) {
         const data = await response.json();
         if (data.success) {
             await fetchModules();
-            showNotification('✅ Module updated!', 'success');
+            showNotification('✅ Módulo atualizado!', 'success');
         }
     } catch (error) {
-        console.error('Error updating module:', error);
-        showNotification('❌ Error updating module', 'error');
+        console.error('Erro ao atualizar módulo:', error);
+        showNotification('❌ Erro ao atualizar módulo', 'error');
     }
 }
 
 async function deleteModule(id) {
-    if (!confirm('Are you sure you want to remove this module?')) return;
+    if (!confirm('Tem certeza que deseja remover este módulo?')) return;
     
     try {
         const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
         const data = await response.json();
         if (data.success) {
             await fetchModules();
-            showNotification('🗑️ Module removed', 'success');
+            showNotification('🗑️ Módulo removido', 'success');
         }
     } catch (error) {
-        console.error('Error deleting module:', error);
-        showNotification('❌ Error removing module', 'error');
+        console.error('Erro ao deletar módulo:', error);
+        showNotification('❌ Erro ao remover módulo', 'error');
     }
 }
 
 async function clearAllModules() {
-    if (!confirm('⚠️ Are you sure you want to clear the ENTIRE base? This action cannot be undone!')) return;
+    if (!confirm('⚠️ Tem certeza que deseja limpar TODA a base? Esta ação não pode ser desfeita!')) return;
     
     try {
         const response = await fetch(API_URL, { method: 'DELETE' });
         const data = await response.json();
         if (data.success) {
             await fetchModules();
-            showNotification('🗑️ Base completely cleared', 'success');
+            showNotification('🗑️ Base limpa completamente', 'success');
         }
     } catch (error) {
-        console.error('Error clearing modules:', error);
-        showNotification('❌ Error clearing base', 'error');
+        console.error('Erro ao limpar módulos:', error);
+        showNotification('❌ Erro ao limpar base', 'error');
     }
 }
 
+// ==================== THREE.JS SETUP ====================
 function initThreeJS() {
     const container = document.getElementById('canvas-container');
     
+    // Scene
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x00001a);
     scene.fog = new THREE.Fog(0x00001a, 50, 200);
     
+    // Camera
     camera = new THREE.PerspectiveCamera(
         60,
         container.clientWidth / container.clientHeight,
@@ -109,11 +114,13 @@ function initThreeJS() {
     );
     camera.position.set(40, 40, 30);
     
+    // Renderer
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.shadowMap.enabled = false;
     container.appendChild(renderer.domElement);
     
+    // Controls
     controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
@@ -121,6 +128,7 @@ function initThreeJS() {
     controls.maxDistance = 150;
     controls.maxPolarAngle = Math.PI / 2;
     
+    // Transform Controls para arrastar e redimensionar
     transformControls = new TransformControls(camera, renderer.domElement);
     transformControls.addEventListener('dragging-changed', (event) => {
         controls.enabled = !event.value;
@@ -129,18 +137,22 @@ function initThreeJS() {
     
     transformControls.addEventListener('objectChange', () => {
         if (selectedMesh && selectedMesh.userData.moduleId) {
+            // Atualizar posição do módulo em tempo real
             updateModulePosition(selectedMesh);
         }
     });
     
     scene.add(transformControls);
     
+    // Raycaster para detecção de cliques
     raycaster = new THREE.Raycaster();
     mouse = new THREE.Vector2();
     
+    // Event listeners para interação
     renderer.domElement.addEventListener('click', onMouseClick);
     window.addEventListener('keydown', onKeyDown);
     
+    // Lights
     const ambientLight = new THREE.AmbientLight(0x404040, 2);
     scene.add(ambientLight);
     
@@ -153,10 +165,16 @@ function initThreeJS() {
     pointLight.position.set(-30, 20, 30);
     scene.add(pointLight);
     
+    // Ground
     createGround();
+    
+    // Stars
     createStars();
     
+    // Handle window resize
     window.addEventListener('resize', onWindowResize);
+    
+    // Animation loop
     animate();
 }
 
@@ -172,6 +190,7 @@ function createGround() {
     ground.rotation.x = -Math.PI / 2;
     ground.receiveShadow = false;
     
+    // Add random displacement for terrain effect
     const positions = geometry.attributes.position;
     for (let i = 0; i < positions.count; i++) {
         const z = Math.random() * 0.5 - 0.25;
@@ -217,6 +236,7 @@ function animate() {
     renderer.render(scene, camera);
 }
 
+// ==================== GEOMETRY CREATION ====================
 function createCylinderGeometry(radius, height) {
     return new THREE.CylinderGeometry(radius, radius, height, 32);
 }
@@ -239,6 +259,7 @@ function createCapsuleGeometry(radius, length) {
 
 function createTorusGeometry(radius) {
     const geometry = new THREE.TorusGeometry(radius, radius * 0.3, 16, 32);
+    // Rotacionar 90 graus para ficar deitado (horizontal)
     geometry.rotateX(Math.PI / 2);
     return geometry;
 }
@@ -285,6 +306,7 @@ function createModuleMesh(module) {
     const mesh = new THREE.Mesh(geometry, material);
     mesh.position.set(module.pos_x, module.pos_z, -module.pos_y);
     
+    // Aplicar rotação se existir
     if (module.rot_x !== undefined) mesh.rotation.x = module.rot_x * Math.PI / 180;
     if (module.rot_y !== undefined) mesh.rotation.y = module.rot_y * Math.PI / 180;
     if (module.rot_z !== undefined) mesh.rotation.z = module.rot_z * Math.PI / 180;
@@ -297,21 +319,25 @@ function createModuleMesh(module) {
 }
 
 function renderScene() {
+    // Remove all existing module meshes
     scene.children.filter(child => child.userData.moduleId).forEach(child => {
         scene.remove(child);
     });
     
+    // Desanexar TransformControls se houver
     if (transformControls.object) {
         transformControls.detach();
     }
     selectedMesh = null;
     
+    // Add all modules
     modules.forEach(module => {
         const mesh = createModuleMesh(module);
         scene.add(mesh);
     });
 }
 
+// ==================== INTERAÇÃO COM OBJETOS ====================
 function onMouseClick(event) {
     if (isTransforming) return;
     
@@ -335,6 +361,7 @@ function onMouseClick(event) {
 }
 
 function selectModule(mesh) {
+    // Destacar módulo selecionado
     if (selectedMesh) {
         selectedMesh.material.emissive.setHex(0x000000);
     }
@@ -342,9 +369,11 @@ function selectModule(mesh) {
     selectedMesh = mesh;
     selectedMesh.material.emissive.setHex(0x555555);
     
+    // Anexar TransformControls
     transformControls.attach(selectedMesh);
-    transformControls.setMode('translate');
+    transformControls.setMode('translate'); // Modo de arrastar
     
+    // Mostrar info do módulo
     const module = modules.find(m => m.id === selectedMesh.userData.moduleId);
     if (module) {
         showModuleInfo(module);
@@ -395,14 +424,17 @@ function updateModulePosition(mesh) {
     
     if (!module) return;
     
+    // Converter posição Three.js para coordenadas do banco
     const pos_x = Math.round(mesh.position.x * 10) / 10;
     const pos_y = Math.round(-mesh.position.z * 10) / 10;
     const pos_z = Math.round(mesh.position.y * 10) / 10;
     
+    // Atualizar módulo local
     module.pos_x = pos_x;
     module.pos_y = pos_y;
     module.pos_z = pos_z;
     
+    // Debounce para não fazer muitas chamadas à API
     if (mesh.userData.updateTimer) {
         clearTimeout(mesh.userData.updateTimer);
     }
@@ -432,14 +464,14 @@ function showModuleInfo(module) {
             <span class="info-badge">${getTypeLabel(module.type)}</span>
         </div>
         <div class="info-content">
-            <p>Position: (${module.pos_x.toFixed(1)}, ${module.pos_y.toFixed(1)}, ${module.pos_z.toFixed(1)})</p>
-            <p><strong>Controls:</strong></p>
+            <p>Posição: (${module.pos_x.toFixed(1)}, ${module.pos_y.toFixed(1)}, ${module.pos_z.toFixed(1)})</p>
+            <p><strong>Controles:</strong></p>
             <ul>
-                <li><kbd>T</kbd> - Move (Translate)</li>
-                <li><kbd>R</kbd> - Rotate</li>
-                <li><kbd>S</kbd> - Scale</li>
-                <li><kbd>ESC</kbd> - Deselect</li>
-                <li><kbd>Del</kbd> - Delete</li>
+                <li><kbd>T</kbd> - Mover (Translate)</li>
+                <li><kbd>R</kbd> - Rotacionar (Rotate)</li>
+                <li><kbd>S</kbd> - Redimensionar (Scale)</li>
+                <li><kbd>ESC</kbd> - Desselecionar</li>
+                <li><kbd>Del</kbd> - Deletar</li>
             </ul>
         </div>
     `;
@@ -453,11 +485,12 @@ function hideModuleInfo() {
     }
 }
 
+// ==================== UI UPDATES ====================
 function updateModulesList() {
     const listContainer = document.getElementById('modulesList');
     
     if (modules.length === 0) {
-        listContainer.innerHTML = '<p class="empty-state">No modules added yet. Start by creating your first module!</p>';
+        listContainer.innerHTML = '<p class="empty-state">Nenhum módulo adicionado ainda. Comece criando seu primeiro módulo!</p>';
         return;
     }
     
@@ -469,11 +502,11 @@ function updateModulesList() {
                 <span class="module-type-badge">${getTypeLabel(module.type)}</span>
             </div>
             <div class="module-info">
-                Position: (${module.pos_x.toFixed(1)}, ${module.pos_y.toFixed(1)}, ${module.pos_z.toFixed(1)})
+                Posição: (${module.pos_x.toFixed(1)}, ${module.pos_y.toFixed(1)}, ${module.pos_z.toFixed(1)})
             </div>
             <div class="module-actions">
-                <button class="btn btn-primary" onclick="editModule('${module.id}')">Edit</button>
-                <button class="btn btn-danger" onclick="removeModule('${module.id}')">Remove</button>
+                <button class="btn btn-primary" onclick="editModule('${module.id}')">Editar</button>
+                <button class="btn btn-danger" onclick="removeModule('${module.id}')">Remover</button>
             </div>
         </div>
     `).join('');
@@ -481,13 +514,13 @@ function updateModulesList() {
 
 function getTypeLabel(type) {
     const labels = {
-        'cylinder': 'Cylinder',
-        'dome': 'Dome',
-        'box': 'Box',
-        'sphere': 'Sphere',
-        'capsule': 'Capsule',
-        'torus': 'Torus',
-        'octahedron': 'Octahedron'
+        'cylinder': 'Cilindro',
+        'dome': 'Domo',
+        'box': 'Cubo',
+        'sphere': 'Esfera',
+        'capsule': 'Cápsula',
+        'torus': 'Toroide',
+        'octahedron': 'Octaedro'
     };
     return labels[type] || type;
 }
@@ -511,11 +544,13 @@ function updateStats() {
 }
 
 function showNotification(message, type = 'info') {
+    // Simple alert for now, can be enhanced with toast notifications
     console.log(`[${type}] ${message}`);
 }
 
+// ==================== EVENT HANDLERS ====================
 document.getElementById('addModuleBtn').addEventListener('click', () => {
-    const name = document.getElementById('moduleName').value || 'Unnamed Module';
+    const name = document.getElementById('moduleName').value || 'Módulo Sem Nome';
     const type = document.getElementById('moduleType').value;
     const color = document.getElementById('moduleColor').value;
     
@@ -542,18 +577,21 @@ document.getElementById('resetCameraBtn').addEventListener('click', () => {
     controls.update();
 });
 
+// ==================== MODAL FUNCTIONS ====================
 window.editModule = function(id) {
     const module = modules.find(m => m.id === id);
     if (!module) return;
     
     currentEditingModule = module;
     
+    // Fill form
     document.getElementById('editName').value = module.name;
     document.getElementById('editColor').value = module.color;
     document.getElementById('editPosX').value = module.pos_x;
     document.getElementById('editPosY').value = module.pos_y;
     document.getElementById('editPosZ').value = module.pos_z;
     
+    // Rotação (padrão 0 se não existir)
     document.getElementById('editRotX').value = module.rot_x || 0;
     document.getElementById('editRotY').value = module.rot_y || 0;
     document.getElementById('editRotZ').value = module.rot_z || 0;
@@ -562,6 +600,7 @@ window.editModule = function(id) {
     updateRotationDisplays();
     updateDimensionControls(module);
     
+    // Show modal
     document.getElementById('editModal').classList.add('active');
 };
 
@@ -584,6 +623,7 @@ window.saveModule = function() {
         rot_z: parseFloat(document.getElementById('editRotZ').value)
     };
     
+    // Get dimension values based on type
     if (currentEditingModule.type === 'cylinder' || currentEditingModule.type === 'capsule') {
         updatedData.radius = parseFloat(document.getElementById('editRadius').value);
         updatedData.height = parseFloat(document.getElementById('editHeight').value);
@@ -610,6 +650,7 @@ window.adjustPosition = function(axis, delta) {
     input.value = Math.max(min, Math.min(max, newValue));
     updatePositionDisplays();
     
+    // Live preview
     if (currentEditingModule) {
         const mesh = scene.children.find(child => child.userData.moduleId === currentEditingModule.id);
         if (mesh) {
@@ -636,12 +677,14 @@ window.adjustRotation = function(axis, delta) {
     const input = document.getElementById(`editRot${axis.toUpperCase()}`);
     let newValue = parseFloat(input.value) + delta;
     
+    // Manter entre 0 e 360
     while (newValue < 0) newValue += 360;
     while (newValue >= 360) newValue -= 360;
     
     input.value = newValue;
     updateRotationDisplays();
     
+    // Live preview
     if (currentEditingModule) {
         const mesh = scene.children.find(child => child.userData.moduleId === currentEditingModule.id);
         if (mesh) {
@@ -659,25 +702,25 @@ function updateDimensionControls(module) {
     if (module.type === 'cylinder' || module.type === 'capsule') {
         html = `
             <div class="form-group">
-                <label for="editRadius">Radius: <span class="dimension-value" id="radiusValue">${module.radius.toFixed(1)} m</span></label>
+                <label for="editRadius">Raio: <span class="dimension-value" id="radiusValue">${module.radius.toFixed(1)} m</span></label>
                 <input type="range" id="editRadius" min="1" max="15" step="0.5" value="${module.radius}" oninput="updateDimensionDisplay('radius', this.value)">
             </div>
             <div class="form-group">
-                <label for="editHeight">Height: <span class="dimension-value" id="heightValue">${module.height.toFixed(1)} m</span></label>
+                <label for="editHeight">Altura: <span class="dimension-value" id="heightValue">${module.height.toFixed(1)} m</span></label>
                 <input type="range" id="editHeight" min="2" max="20" step="0.5" value="${module.height}" oninput="updateDimensionDisplay('height', this.value)">
             </div>
         `;
     } else if (module.type === 'dome' || module.type === 'sphere' || module.type === 'torus' || module.type === 'octahedron') {
         html = `
             <div class="form-group">
-                <label for="editRadius">Radius: <span class="dimension-value" id="radiusValue">${module.radius.toFixed(1)} m</span></label>
+                <label for="editRadius">Raio: <span class="dimension-value" id="radiusValue">${module.radius.toFixed(1)} m</span></label>
                 <input type="range" id="editRadius" min="1" max="15" step="0.5" value="${module.radius}" oninput="updateDimensionDisplay('radius', this.value)">
             </div>
         `;
     } else if (module.type === 'box') {
         html = `
             <div class="form-group">
-                <label for="editRadius">Size: <span class="dimension-value" id="radiusValue">${module.radius.toFixed(1)} m</span></label>
+                <label for="editRadius">Tamanho: <span class="dimension-value" id="radiusValue">${module.radius.toFixed(1)} m</span></label>
                 <input type="range" id="editRadius" min="1" max="15" step="0.5" value="${module.radius}" oninput="updateDimensionDisplay('radius', this.value)">
             </div>
         `;
@@ -703,10 +746,12 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     });
 });
 
+// Position sliders live update
 ['editPosX', 'editPosY', 'editPosZ'].forEach(id => {
     document.getElementById(id).addEventListener('input', function() {
         updatePositionDisplays();
         
+        // Live preview
         if (currentEditingModule) {
             const mesh = scene.children.find(child => child.userData.moduleId === currentEditingModule.id);
             if (mesh) {
@@ -720,10 +765,12 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     });
 });
 
+// Rotation sliders live update
 ['editRotX', 'editRotY', 'editRotZ'].forEach(id => {
     document.getElementById(id).addEventListener('input', function() {
         updateRotationDisplays();
         
+        // Live preview
         if (currentEditingModule) {
             const mesh = scene.children.find(child => child.userData.moduleId === currentEditingModule.id);
             if (mesh) {
@@ -737,5 +784,6 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     });
 });
 
+// ==================== INITIALIZATION ====================
 initThreeJS();
 fetchModules();
