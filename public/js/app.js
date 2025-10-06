@@ -65,7 +65,7 @@ async function updateModule(id, moduleData) {
 }
 
 async function deleteModule(id) {
-    if (!confirm('Tem certeza que deseja remover este módulo?')) return;
+    if (!confirm('Are you sure you want to remove this module?')) return;
     
     try {
         const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
@@ -81,7 +81,7 @@ async function deleteModule(id) {
 }
 
 async function clearAllModules() {
-    if (!confirm('⚠️ Tem certeza que deseja limpar TODA a base? Esta ação não pode ser desfeita!')) return;
+    if (!confirm('⚠️ Are you sure you want to clear the ENTIRE base? This action cannot be undone!')) return;
     
     try {
         const response = await fetch(API_URL, { method: 'DELETE' });
@@ -449,40 +449,12 @@ function updateModulePosition(mesh) {
 }
 
 function showModuleInfo(module) {
-    const infoDiv = document.getElementById('selectedModuleInfo');
-    if (!infoDiv) {
-        const newDiv = document.createElement('div');
-        newDiv.id = 'selectedModuleInfo';
-        newDiv.className = 'selected-module-info';
-        document.body.appendChild(newDiv);
-    }
-    
-    const info = document.getElementById('selectedModuleInfo');
-    info.innerHTML = `
-        <div class="info-header">
-            <strong>${module.name}</strong>
-            <span class="info-badge">${getTypeLabel(module.type)}</span>
-        </div>
-        <div class="info-content">
-            <p>Posição: (${module.pos_x.toFixed(1)}, ${module.pos_y.toFixed(1)}, ${module.pos_z.toFixed(1)})</p>
-            <p><strong>Controles:</strong></p>
-            <ul>
-                <li><kbd>T</kbd> - Mover (Translate)</li>
-                <li><kbd>R</kbd> - Rotacionar (Rotate)</li>
-                <li><kbd>S</kbd> - Redimensionar (Scale)</li>
-                <li><kbd>ESC</kbd> - Desselecionar</li>
-                <li><kbd>Del</kbd> - Deletar</li>
-            </ul>
-        </div>
-    `;
-    info.style.display = 'block';
+    // Helper de controles removido - os controles já estão visíveis na sidebar
+    // Mantemos apenas a seleção visual do módulo
 }
 
 function hideModuleInfo() {
-    const info = document.getElementById('selectedModuleInfo');
-    if (info) {
-        info.style.display = 'none';
-    }
+    // Não há mais info para esconder
 }
 
 // ==================== UI UPDATES ====================
@@ -490,7 +462,7 @@ function updateModulesList() {
     const listContainer = document.getElementById('modulesList');
     
     if (modules.length === 0) {
-        listContainer.innerHTML = '<p class="empty-state">Nenhum módulo adicionado ainda. Comece criando seu primeiro módulo!</p>';
+        listContainer.innerHTML = '<p class="empty-state">No modules added yet. Start by creating your first module!</p>';
         return;
     }
     
@@ -502,11 +474,11 @@ function updateModulesList() {
                 <span class="module-type-badge">${getTypeLabel(module.type)}</span>
             </div>
             <div class="module-info">
-                Posição: (${module.pos_x.toFixed(1)}, ${module.pos_y.toFixed(1)}, ${module.pos_z.toFixed(1)})
+                Position: (${module.pos_x.toFixed(1)}, ${module.pos_y.toFixed(1)}, ${module.pos_z.toFixed(1)})
             </div>
             <div class="module-actions">
-                <button class="btn btn-primary" onclick="editModule('${module.id}')">Editar</button>
-                <button class="btn btn-danger" onclick="removeModule('${module.id}')">Remover</button>
+                <button class="btn btn-primary" onclick="editModule('${module.id}')">Edit</button>
+                <button class="btn btn-danger" onclick="removeModule('${module.id}')">Remove</button>
             </div>
         </div>
     `).join('');
@@ -514,13 +486,13 @@ function updateModulesList() {
 
 function getTypeLabel(type) {
     const labels = {
-        'cylinder': 'Cilindro',
-        'dome': 'Domo',
-        'box': 'Cubo',
-        'sphere': 'Esfera',
-        'capsule': 'Cápsula',
-        'torus': 'Toroide',
-        'octahedron': 'Octaedro'
+        'cylinder': 'Cylinder',
+        'dome': 'Dome',
+        'box': 'Box',
+        'sphere': 'Sphere',
+        'capsule': 'Capsule',
+        'torus': 'Torus',
+        'octahedron': 'Octahedron'
     };
     return labels[type] || type;
 }
@@ -550,7 +522,7 @@ function showNotification(message, type = 'info') {
 
 // ==================== EVENT HANDLERS ====================
 document.getElementById('addModuleBtn').addEventListener('click', () => {
-    const name = document.getElementById('moduleName').value || 'Módulo Sem Nome';
+    const name = document.getElementById('moduleName').value || 'Unnamed Module';
     const type = document.getElementById('moduleType').value;
     const color = document.getElementById('moduleColor').value;
     
@@ -702,25 +674,25 @@ function updateDimensionControls(module) {
     if (module.type === 'cylinder' || module.type === 'capsule') {
         html = `
             <div class="form-group">
-                <label for="editRadius">Raio: <span class="dimension-value" id="radiusValue">${module.radius.toFixed(1)} m</span></label>
+                <label for="editRadius">Radius: <span class="dimension-value" id="radiusValue">${module.radius.toFixed(1)} m</span></label>
                 <input type="range" id="editRadius" min="1" max="15" step="0.5" value="${module.radius}" oninput="updateDimensionDisplay('radius', this.value)">
             </div>
             <div class="form-group">
-                <label for="editHeight">Altura: <span class="dimension-value" id="heightValue">${module.height.toFixed(1)} m</span></label>
+                <label for="editHeight">Height: <span class="dimension-value" id="heightValue">${module.height.toFixed(1)} m</span></label>
                 <input type="range" id="editHeight" min="2" max="20" step="0.5" value="${module.height}" oninput="updateDimensionDisplay('height', this.value)">
             </div>
         `;
     } else if (module.type === 'dome' || module.type === 'sphere' || module.type === 'torus' || module.type === 'octahedron') {
         html = `
             <div class="form-group">
-                <label for="editRadius">Raio: <span class="dimension-value" id="radiusValue">${module.radius.toFixed(1)} m</span></label>
+                <label for="editRadius">Radius: <span class="dimension-value" id="radiusValue">${module.radius.toFixed(1)} m</span></label>
                 <input type="range" id="editRadius" min="1" max="15" step="0.5" value="${module.radius}" oninput="updateDimensionDisplay('radius', this.value)">
             </div>
         `;
     } else if (module.type === 'box') {
         html = `
             <div class="form-group">
-                <label for="editRadius">Tamanho: <span class="dimension-value" id="radiusValue">${module.radius.toFixed(1)} m</span></label>
+                <label for="editRadius">Size: <span class="dimension-value" id="radiusValue">${module.radius.toFixed(1)} m</span></label>
                 <input type="range" id="editRadius" min="1" max="15" step="0.5" value="${module.radius}" oninput="updateDimensionDisplay('radius', this.value)">
             </div>
         `;
